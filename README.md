@@ -8,7 +8,7 @@ We tried to get the best of the great structure from the website [Exrx](https://
 
 ### Model
 
-<img src="model.png" width="400"/>
+<img src="model.png" width="700"/>
 
 Source: https://miro.com/app/board/o9J_l9T9uF8=/
 

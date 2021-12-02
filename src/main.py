@@ -10,11 +10,27 @@ if __name__ == '__main__':
     muscle_group_ids = db.get_muscle_group_ids()
     print(muscle_group_ids)
 
+    exercises = []
+
     for mgi in muscle_group_ids:
-        links = scrapper.get_exercise_links_for_muscle_group(mgi)
-        print(links)
+        #get a list of all exercices available for this muscle group
+        exercises_ref = scrapper.get_exercises_ref_for_muscle_group(mgi)
+        print('muscle group ', mgi)
+        print(exercises_ref)
         time.sleep(0.5)
-        break
+        for ex_ref in exercises_ref:
+            #get details about the exercise
+            print('exercise ref ', ex_ref)
+            exercise = scrapper.get_exercise_details(ex_ref['url'])
+            # print(exercise)
+            exr = {**exercise, **ex_ref}
+            exercises.append(exr)
+            print('.')
+            print(exr)
+            # print(exercises)
+            break
+
+    print(exercises)
 
     #load main index
 

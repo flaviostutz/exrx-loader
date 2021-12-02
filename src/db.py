@@ -44,6 +44,7 @@ def create_tables():
     cur.execute('''CREATE TABLE IF NOT EXISTS muscle_exercise(
                     exercise_id text NOT NULL,
                     muscle_id text NOT NULL,
+                    muscle_group_id text NOT NULL, 
                     relation text NOT NULL,
                     FOREIGN KEY (exercise_id)
                         REFERENCES exercise(id)
