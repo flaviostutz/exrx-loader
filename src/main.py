@@ -1,45 +1,47 @@
 import db
 import scrapper
 import time
+import io
 
 if __name__ == '__main__':
 
-    db.create_tables()
+    db.init()
 
     print("Get all muscle groups")
     muscle_group_ids = db.get_muscle_group_ids()
-    print(muscle_group_ids)
 
-    exercises = []
+    # exercises = []
 
     for mgi in muscle_group_ids:
+
         #get a list of all exercices available for this muscle group
         exercises_ref = scrapper.get_exercises_ref_for_muscle_group(mgi)
         print('muscle group ', mgi)
         print(exercises_ref)
         time.sleep(0.5)
+
         for ex_ref in exercises_ref:
+
             #get details about the exercise
-            print('exercise ref ', ex_ref)
-            exercise = scrapper.get_exercise_details(ex_ref['url'])
+            print('exercise ', ex_ref['url'])
+            exr = scrapper.get_exercise_details(ex_ref['url'])
             # print(exercise)
-            exr = {**exercise, **ex_ref}
-            exercises.append(exr)
-            print('.')
-            print(exr)
+            exercise = {**exr, **ex_ref}
+            # exercises.append(exercise)
             # print(exercises)
-            break
 
-    print(exercises)
+            #save exercise in db
+            db.insert_exercise(exercise)
 
-    #load main index
+            # break
 
-    # db.create_all()
-    # if not Exercise.query.first():
-    #     exercises_list= get_data(get_exercise_links(obj))
-    #     for ex in exercises_list:
-    #         utility = get_or_create_utility(ex.utility,ex.mechanics)
-    #         force = get_or_create_force(ex.force)
-    #         mechanics = get_or_create_mech(ex.mechanics)
-    #         muscle = get_or_create_muscle(ex.target_muscle)
-    #         get_or_create_exercise(ex.name,utility.id, force.id, mechanics.id,ex.instructions, muscle.id)
+    
+    # print(exercises)
+
+    with io.open('/output/datadump.sql', 'w') as p:
+        conn = db.conn()
+        for line in conn.iterdump(): 
+            p.write('%s\n' % line)
+        conn.close()
+
+    print("Database dumped")

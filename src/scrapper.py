@@ -3,7 +3,7 @@ from cache import Cache
 import requests
 import re
 
-pcache = Cache("./pages_cache.json")
+pcache = Cache("/output/pages_cache.json")
 
 def get_exercises_ref_for_muscle_group(muscle_group_id):
     url = "https://exrx.net/Lists/ExList/%s" % muscle_group_id 
@@ -36,7 +36,7 @@ def get_exercises_ref_for_muscle_group(muscle_group_id):
             # muscles.append({'relation':'target','muscle_id':m.group(1)})
             r = {
                 'url': rlink,
-                'exercise_id': m.group(3),
+                'exercise_id': m.group(2) + m.group(3),
                 'equipment': m.group(2),
                 'target_muscle_group': muscle_group_id
                 # 'muscles': muscles
@@ -94,10 +94,16 @@ def get_exercise_details(url):
     except IndexError:
         print('no comments')
 
+    media_url = None
 
-    # for a in (x.text for x in page.find_all("p")):
-    #     print('PPPPPP')
-    #     print(a)
+    videosrc = page.find("source")
+    if videosrc is not None:
+        media_url = videosrc.get('src')
+
+    if media_url is None:
+        imgsrc = page.find("meta[name=thumbnail]")
+        if imgsrc is not None:
+            media_url = imgsrc.get('content')
 
     muscle_targets_regex = '<strong>Target<\/strong><\/a><\/p><ul>(.*?)<\/ul>'
     muscle_synergists_regex = '<strong>Synergists<\/strong><\/a><\/p><ul>(.*?)<\/ul>'
@@ -105,44 +111,33 @@ def get_exercise_details(url):
     muscle_stabilizers_regex = '<strong>Stabilizers<\/strong><\/a><\/p><ul>(.*?)<\/ul>'
     muscle_antagonist_stabilizer_regex = '<strong>Antagonist Stabilizer<\/strong><\/a><\/p><ul>(.*?)<\/ul>'
 
-    muscle_list_regex = '<li><a href=\"..\/..\/Muscles\/(.*?)\".*<\/a>'
+    muscle_list_regex = '<li><a href=\"..\/..\/Muscles\/(.*?)\".*?<\/a>'
 
     muscles = []
     # muscles.append({'relation':'target','muscle_id':target_muscle})
 
-    print('MUSCLES EXTRACT')
     main_data = str(page.find('main')).replace("\n", "")
 
     #target muscles extract
-    print('1111')
     muscles_list = extract_muscles(muscle_targets_regex, muscle_list_regex, main_data)
     for m in muscles_list:
         muscles.append({'relation':'target','muscle_id':m})
-    print(muscles)
 
-    print('2222')
     muscles_list = extract_muscles(muscle_synergists_regex, muscle_list_regex, main_data)
     for m in muscles_list:
         muscles.append({'relation':'synergist','muscle_id':m})
-    print(muscles)
 
-    print('3333')
     muscles_list = extract_muscles(muscle_stabilizers_regex, muscle_list_regex, main_data)
     for m in muscles_list:
         muscles.append({'relation':'stabilizer','muscle_id':m})
-    print(muscles)
 
-    print('4444')
     muscles_list = extract_muscles(muscle_dyn_stabilizers_regex, muscle_list_regex, main_data)
     for m in muscles_list:
         muscles.append({'relation':'dynamic_stabilizer','muscle_id':m})
-    print(muscles)
 
-    print('5555')
     muscles_list = extract_muscles(muscle_antagonist_stabilizer_regex, muscle_list_regex, main_data)
     for m in muscles_list:
         muscles.append({'relation':'antagonist_stabilizer','muscle_id':m})
-    print(muscles)
 
     return {
         'name': name,
@@ -152,17 +147,18 @@ def get_exercise_details(url):
         'preparation': preparation,
         'execution': execution,
         'comments': comments,
-        'muscles': muscles
+        'muscles': muscles,
+        'page_url': url,
+        'media_url': media_url
     }
 
 def extract_muscles(muscle_section_regex, muscle_list_regex, main_data):
     m = re.findall(muscle_section_regex, main_data)
-    # print(main_data)
-    # print(m)
 
     result = []
     if len(m)>0:
         muscle_contents = m[0]
+        print(muscle_section_regex)
         print(muscle_contents)
         print(muscle_list_regex)
         mm = re.findall(muscle_list_regex, muscle_contents)
@@ -171,7 +167,7 @@ def extract_muscles(muscle_section_regex, muscle_list_regex, main_data):
         for mmm in mm:
             m = mmm.replace('target="_parent','')
             m = m.replace('"','')
-            # print(m)
             result.append(m)
 
+    print(result)
     return result

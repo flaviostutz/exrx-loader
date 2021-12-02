@@ -1,44 +1,59 @@
 import sqlite3
 
 def conn():
-    return sqlite3.connect('./data.db')
+    return sqlite3.connect('/output/sqlite.db')
 
-def create_tables():
+def init():
     con = conn()
     cur = con.cursor()
 
     cur.execute('''CREATE TABLE IF NOT EXISTS muscle_group(
-                    id text PRIMARY KEY, 
-                    name text NOT NULL
+                    id text NOT NULL, 
+                    name text NOT NULL,
+                    PRIMARY KEY (id)
                 )''')
 
     cur.execute('''CREATE TABLE IF NOT EXISTS muscle(
-                    id text PRIMARY KEY,
+                    id text NOT NULL,
                     muscle_group_id text NOT NULL, 
                     name text NOT NULL,
+                    PRIMARY KEY (id),
                     FOREIGN KEY (muscle_group_id)
                         REFERENCES muscle_group(id)
                         ON DELETE CASCADE
                 )''')
 
     cur.execute('''CREATE TABLE IF NOT EXISTS equipment(
-                    id text PRIMARY KEY, 
-                    name text NOT NULL
+                    id text NOT NULL, 
+                    name text NOT NULL,
+                    PRIMARY KEY (id)
                 )''')
 
     cur.execute('''CREATE TABLE IF NOT EXISTS exercise(
-                    id text PRIMARY KEY,
+                    id text NOT NULL,
                     equipment_id text NOT NULL,
                     name text NOT NULL,
-                    utilities text NOT NULL,
+                    utility text NOT NULL,
                     mechanics text NOT NULL,
                     force text NOT NULL,
                     preparation text NOT NULL,
                     execution text NOT NULL,
                     comments text NOT NULL,
+                    muscle_group_id text NOT NULL, 
+                    media_url text NOT NULL, 
+                    page_url text NOT NULL, 
+                    PRIMARY KEY (id),
                     FOREIGN KEY (equipment_id)
                         REFERENCES equipment(id)
+                        ON DELETE CASCADE,
+                    FOREIGN KEY (muscle_group_id)
+                        REFERENCES muscle_group(id)
                         ON DELETE CASCADE
+                )''')
+
+    cur.execute('''CREATE TABLE IF NOT EXISTS muscle_exercise_relation(
+                    id text NOT NULL,
+                    PRIMARY KEY (id)
                 )''')
 
     cur.execute('''CREATE TABLE IF NOT EXISTS muscle_exercise(
@@ -46,17 +61,30 @@ def create_tables():
                     muscle_id text NOT NULL,
                     muscle_group_id text NOT NULL, 
                     relation text NOT NULL,
+                    PRIMARY KEY (exercise_id, muscle_id, muscle_group_id, relation),
                     FOREIGN KEY (exercise_id)
                         REFERENCES exercise(id)
                         ON DELETE CASCADE,
                     FOREIGN KEY (muscle_id)
                         REFERENCES muscle(id)
+                        ON DELETE CASCADE,
+                    FOREIGN KEY (muscle_group_id)
+                        REFERENCES muscle_group(id)
+                        ON DELETE CASCADE,
+                    FOREIGN KEY (relation)
+                        REFERENCES muscle_exercise_relation(id)
                         ON DELETE CASCADE
                 )''')
 
     print("Tables created")
 
     print("Adding static values")
+
+    cur.execute('''INSERT INTO muscle_exercise_relation VALUES ("target")''')
+    cur.execute('''INSERT INTO muscle_exercise_relation VALUES ("synergist")''')
+    cur.execute('''INSERT INTO muscle_exercise_relation VALUES ("stabilizer")''')
+    cur.execute('''INSERT INTO muscle_exercise_relation VALUES ("dynamic_stabilizer")''')
+    cur.execute('''INSERT INTO muscle_exercise_relation VALUES ("oblique_statbilizer")''')
 
     cur.execute('''INSERT INTO muscle_group VALUES ("NeckWt","Neck")''')
     cur.execute('''INSERT INTO muscle VALUES ("Sternocleidomastoid","NeckWt","Sternocleidomastoid")''')
@@ -136,4 +164,61 @@ def get_muscle_group_ids():
     muscle_group_ids = [x[0] for x in rows]
     con.close()
     return muscle_group_ids
+
+def insert_exercise(exercise):
+    con = conn()
+    cur = con.cursor()
+
+    print('\n\n\nEXERCISE ', exercise['page_url'])
+
+    exercise['name'] = exercise['name'].replace('\"','\'')
+    exercise['preparation'] = exercise['preparation'].replace('\"','\'')
+    exercise['execution'] = exercise['execution'].replace('\"','\'')
+    exercise['comments'] = exercise['comments'].replace('\"','\'')
+
+    s = '''INSERT INTO exercise VALUES (
+                    "{exercise_id}",
+                    "{equipment}",
+                    "{name}",
+                    "{utility}",
+                    "{mechanics}",
+                    "{force}",
+                    "{preparation}",
+                    "{execution}",
+                    "{comments}",
+                    "{target_muscle_group}",
+                    "{media_url}",
+                    "{page_url}"
+                )'''.format(**exercise)
+    print(s)
+
+    try:
+        cur.execute(s)
+    except Exception as e:
+        if "UNIQUE constraint failed" in str(e):
+            print('Ignoring duplicate. Known problems in website contents. ,e=', e)
+        else:
+            raise e
+
+    print(exercise['muscles'])
+
+    for em in exercise['muscles']:
+        ea = {**exercise, **em}
+        s = '''INSERT INTO muscle_exercise VALUES (
+                        "{exercise_id}",
+                        "{muscle_id}",
+                        "{target_muscle_group}",
+                        "{relation}"
+                    )'''.format(**ea)
+        print(s)
+        try:
+            cur.execute(s)
+        except Exception as e:
+            if "UNIQUE constraint failed" in str(e):
+                print('Ignoring duplicate. Known problems in website contents. ,e=', e)
+            else:
+                raise e
+
+    con.commit()
+    con.close()
 
