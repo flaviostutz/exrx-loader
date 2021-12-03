@@ -23,7 +23,11 @@ Source: https://miro.com/app/board/o9J_l9T9uF8=/
     * Add info URL, exercise_name and equipment_initials from previous step
 
 
-### Acknowledgments
+### Sample SQL queries
 
-Based on initial work from https://github.com/cikeddy/SI507_Final
+* SELECT id, name, count(*) AS c FROM 'exercise' INNER JOIN 'muscle_exercise' ON muscle_exercise.exercise_id=exercise.id GROUP BY id, name ORDER BY c DESC
+
+* SELECT * FROM 'muscle_exercise' where exercise_id='CBOneArmHighRow'
+
+* select equipment_id,count(*) as c from exercise group by equipment_id order by c desc
 

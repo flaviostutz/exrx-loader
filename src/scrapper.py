@@ -34,10 +34,21 @@ def get_exercises_ref_for_muscle_group(muscle_group_id):
         if m != None:
             # muscles = []
             # muscles.append({'relation':'target','muscle_id':m.group(1)})
+
+            equip = 'SH'
+            e = m.group(2)
+
+            #special cases (by hand)
+            if e == 'Lu' or e == 'Ro' or e == 'Ha' or e == 'Ca':
+                e = "BB"
+
+            if e in ["LV","CB","BW","DB","BB","Wt","SL","ST","SM","AS","As","TB","SB","KB","SV","MB","BR","SH","","","",""]:
+                equip = e
+
             r = {
                 'url': rlink,
                 'exercise_id': m.group(2) + m.group(3),
-                'equipment': m.group(2),
+                'equipment': equip,
                 'target_muscle_group': muscle_group_id
                 # 'muscles': muscles
             }
@@ -138,6 +149,12 @@ def get_exercise_details(url):
     muscles_list = extract_muscles(muscle_antagonist_stabilizer_regex, muscle_list_regex, main_data)
     for m in muscles_list:
         muscles.append({'relation':'antagonist_stabilizer','muscle_id':m})
+
+    if "pull" in force and "push" in force:
+        force = "push_pull"
+
+    if "auxiliary" in utility and "basic" in utility:
+        utility = "basic_auxiliary"
 
     return {
         'name': name,
