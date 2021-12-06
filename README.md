@@ -29,5 +29,7 @@ Source: https://miro.com/app/board/o9J_l9T9uF8=/
 
 * SELECT * FROM 'muscle_exercise' where exercise_id='CBOneArmHighRow'
 
-* select equipment_id,count(*) as c from exercise group by equipment_id order by c desc
+* number of exercises by equipment: select equipment_id,count(*) as c from exercise group by equipment_id order by c desc
+
+* exercises that affects most muscles: select exercise_id,count(*) as c from muscle_exercise group by exercise_id order by c desc
 
